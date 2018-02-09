@@ -29,308 +29,230 @@
 #
 
 cmake_minimum_required(VERSION 3.0)
-project(zmdnetlib)
-
-# Debug build type as default
-if (NOT CMAKE_BUILD_TYPE)
-	message(STATUS "No build type selected, using DEBUG")
-	set(CMAKE_BUILD_TYPE "DEBUG")
-endif ()
-
-include(CheckStructHasMember)
-include(CheckIncludeFile)
-include(CheckIncludeFiles)
-include(CheckCCompilerFlag)
-
-#################################################
-# CHECK OPTIONS
-#################################################
-
-option(RUN_TIME_CHECKS "Add runtime checks" 1)
-if (RUN_TIME_CHECKS)
-    message(STATUS "RUN_TIME_CHECKS")
-    add_definitions(-DRUN_TIME_CHECKS)
-endif ()
-
-option(ZMDNET_LOCAL_TRACE_BUF "ZMDNET_LOCAL_TRACE_BUF" 1)
-if (ZMDNET_LOCAL_TRACE_BUF)
-    message(STATUS "ZMDNET_LOCAL_TRACE_BUF")
-    add_definitions(-DZMDNET_LOCAL_TRACE_BUF)
-endif ()
-
-option(ZMDNET_LTRACE_CHUNKS "ZMDNET_LTRACE_CHUNKS" 1)
-if (ZMDNET_LTRACE_CHUNKS)
-    message(STATUS "ZMDNET_LTRACE_CHUNKS")
-    add_definitions(-DZMDNET_LTRACE_CHUNKS)
-endif ()
+# Ignore warnings about rpath behavior on OS X
+cmake_policy(SET CMP0042 NEW)
+project(zmdsim)
 
 
-option(ZMDNET_LTRACE_ERRORS "ZMDNET_LTRACE_ERRORS" 1)
-if (ZMDNET_LTRACE_ERRORS)
-    message(STATUS "ZMDNET_LTRACE_ERRORS")
-    add_definitions(-DZMDNET_LTRACE_ERRORS)
-endif ()
-
-option(ZMDNET_LOCAL_TRACE_BUF "ZMDNET_LOCAL_TRACE_BUF" 1)
-if (ZMDNET_LOCAL_TRACE_BUF)
-    message(STATUS "ZMDNET_LOCAL_TRACE_BUF")
-    add_definitions(-DZMDNET_LOCAL_TRACE_BUF)
-endif ()
-
-option(RUN_TIME_CHECKS "Add runtime checks" 1)
-if (RUN_TIME_CHECKS)
-	message(STATUS "RUN_TIME_CHECKS")
-	add_definitions(-DRUN_TIME_CHECKS)
-endif ()
-
-option(ZMDNET_PROCESS_LEVEL_LOCKS "ZMDNET_PROCESS_LEVEL_LOCKS" 1)
-if (ZMDNET_PROCESS_LEVEL_LOCKS)
-    message(STATUS "ZMDNET_PROCESS_LEVEL_LOCKS")
-    add_definitions(-DZMDNET_PROCESS_LEVEL_LOCKS)
-endif ()
-
-option(ZMDNET_DEBUG "Provide debug information" 1)
-if (ZMDNET_DEBUG)
-	message(STATUS "ZMDNET_DEBUG")
-	add_definitions(-DZMDNET_DEBUG)
-endif ()
-
-option(ZMDNET_SUPPORT_IPV4 "Support IPv4" 1)
-if (ZMDNET_SUPPORT_IPV4)
-	message(STATUS "ZMDNET_SUPPORT_IPV4")
-	add_definitions(-DZMDNET_SUPPORT_IPV4)
-endif ()
-
-option(ZMDNET_SUPPORT_IPV6 "Support IPv6" 1)
-if (ZMDNET_SUPPORT_IPV6)
-	message(STATUS "ZMDNET_SUPPORT_IPV6")
-	add_definitions(-DZMDNET_SUPPORT_IPV6)
-endif ()
-
-option(zmdnet_werror "Thread warning as error" 1)
-option(zmdnet_link_programs_static "Link example programs static" 0)
-option(zmdnet_build_programs "Build example programs" 1)
-option(zmdnet_build_tests "Build tests" 1)
-option(zmdnet_sanitizer_address "Compile with address sanitizer" 0)
-option(zmdnet_sanitizer_memory "Compile with memory sanitizer" 0)
-
-if (zmdnet_sanitizer_address AND zmdnet_sanitizer_memory)
-	message(FATAL_ERROR "Can not compile with both sanitizer options")
-endif ()
-
-if (zmdnet_link_programs_static OR WIN32)
-	set(programs_link_library "zmdnet-static")
-else ()
-	set(programs_link_library "zmdnet")
-endif ()
+option(ENABLE_PLUGINS "Enable Official Plugins" ON)
+option(ENABLE_LC3EDIT "Build lc3edit" OFF)
+option(ENABLE_COMP "Build comp" OFF)
+option(ENABLE_COMPLX "Build complx" ON)
+option(ENABLE_LC3TEST "Build lc3test" ON)
+option(ENABLE_DEV "Build dev version" OFF)
+option(ENABLE_TESTS "Enable testing" OFF)
+option(ENABLE_COVERAGE "Enable testing coverage" OFF)
+option(ENABLE_PYLC3 "Enable python bindings to liblc3" OFF)
 
 
-#################################################
-# CHECK FOR TYPES AND FUNCTIONS
-#################################################
-
-check_include_file("sys/filedesc.h" HAVE_PEELOFF_SOCKOPT)
-if (HAVE_PEELOFF_SOCKOPT)
-    message(STATUS "HAVE_PEELOFF_SOCKOPT")
-    add_definitions(-DHAVE_PEELOFF_SOCKOPT)
-endif ()
-
-check_include_file("sys/queue.h" ZMDNET_HAVE_SYS_QUEUE_H)
-if (ZMDNET_HAVE_SYS_QUEUE_H)
-    message(STATUS "ZMDNET_HAVE_SYS_QUEUE_H")
-    add_definitions(-DZMDNET_HAVE_SYS_QUEUE_H)
-endif ()
-
-check_include_files("sys/socket.h;linux/if_addr.h" ZMDNET_HAVE_LINUX_IF_ADDR_H)
-if (ZMDNET_HAVE_LINUX_IF_ADDR_H)
-    message(STATUS "HAVE_LINUX_IF_ADDR_H")
-	add_definitions(-DZMDNET_HAVE_LINUX_IF_ADDR_H)
-endif ()
-
-check_include_files("netipsec/ipsec.h;netipsec/key.h;netipsec/ipsec6.h" ZMDNET_HAVE_IPSEC)
-if (ZMDNET_HAVE_IPSEC)
-    message(STATUS "ZMDNET_HAVE_IPSEC")
-    add_definitions(-DZMDNET_HAVE_IPSEC)
-endif ()
+if(ENABLE_TESTS)
+    enable_testing()
+endif(ENABLE_TESTS)
 
 
-check_include_files("sys/socket.h;linux/rtnetlink.h" ZMDNET_HAVE_LINUX_RTNETLINK_H)
-if (ZMDNET_HAVE_LINUX_RTNETLINK_H)
-	message(STATUS "ZMDNET_HAVE_LINUX_RTNETLINK_H")
-	add_definitions(-DZMDNET_HAVE_LINUX_RTNETLINK_H)
-endif ()
-
-check_include_files("sys/types.h;netinet/in.h;netinet/ip.h;netinet/ip_icmp.h" ZMDNET_HAVE_NETINET_IP_ICMP_H)
-if (ZMDNET_HAVE_NETINET_IP_ICMP_H)
-	message(STATUS "ZMDNET_HAVE_NETINET_IP_ICMP_H")
-	add_definitions(-DZMDNET_HAVE_NETINET_IP_ICMP_H)
-endif ()
-
-check_include_files("stdatomic.h" ZMDNET_HAVE_STDATOMIC_H)
-if (ZMDNET_HAVE_STDATOMIC_H)
-	message(STATUS "HAVE_STDATOMIC_H")
-	add_definitions(-DZMDNET_HAVE_STDATOMIC_H)
-endif ()
+# Additional debug flags
+set(CMAKE_C_FLAGS_DEBUG "-g -pg")
+# Install directories
+set(CMAKE_INSTALL_LIBDIR lib CACHE STRING "where to install libraries/plugins")
+set(CMAKE_INSTALL_BINDIR bin CACHE STRING "where to install programs")
 
 
-#################################################
-# CHECK STRUCT MEMBERS
-#################################################
-
-set(CMAKE_REQUIRED_INCLUDES "${CMAKE_SOURCE_DIR}/src")
-
-check_include_file("zmdnet.h" have_zmdnet_h)
-if (NOT have_zmdnet_h)
-	message(FATAL_ERROR "zmdnet.h not found")
-endif ()
-
-check_struct_has_member("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" have_sa_len)
-if (have_sa_len)
-	message(STATUS "have_sa_len")
-	option(HAVE_SA_LEN "HAVE_SA_LEN" 1)
-	add_definitions(-DHAVE_SA_LEN)
-endif ()
-
-
-check_struct_has_member("struct sockaddr_in" "sin_len" "sys/types.h;netinet/in.h" have_sin_len)
-if (have_sin_len)
-	message(STATUS "have_sin_len")
-	option(HAVE_SIN_LEN "DHAVE_SIN_LEN" 1)
-	add_definitions(-DHAVE_SIN_LEN)
-endif ()
-
-check_struct_has_member("struct sockaddr_in6" "sin6_len" "sys/types.h;netinet/in.h" have_sin6_len)
-if (have_sin6_len)
-	message(STATUS "have_sin6_len")
-	option(HAVE_SIN6_LEN "HAVE_SIN6_LEN" 1)
-	add_definitions(-DHAVE_SIN6_LEN)
-endif ()
-
-check_struct_has_member("struct sockaddr_conn" "sconn_len" "zmdnet.h" have_sconn_len)
-if (have_sconn_len)
-	message(STATUS "HAVE_SCONN_LEN")
-	option(HAVE_SCONN_LEN "HAVE_SCONN_LEN" 1)
-	add_definitions(-DHAVE_SCONN_LEN)
-endif ()
+# Add code coverage stuff.
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+if(ENABLE_COVERAGE)
+    include(CodeCoverage)
+    append_coverage_compiler_flags()
+endif(ENABLE_COVERAGE)
 
 
 #################################################
 # COMPILER SETTINGS
 #################################################
-
 # SETTINGS FOR UNIX COMPILER
 if ("${CMAKE_C_COMPILER_ID}" MATCHES "Clang" OR "${CMAKE_C_COMPILER_ID}" MATCHES "AppleClang" OR "${CMAKE_C_COMPILER_ID}" MATCHES "GNU")
-	set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c99 -pedantic -Wall -Wextra")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -pedantic -Wall -Wextra")
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c99 -pedantic -Wall -Wextra")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c99 -pedantic -Wall -Wextra")
 
-	check_c_compiler_flag(-Wfloat-equal has_wfloat_equal)
-	if (has_wfloat_equal)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wfloat-equal")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfloat-equal")
-	endif ()
+    check_c_compiler_flag(-Wfloat-equal has_wfloat_equal)
+    if (has_wfloat_equal)
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wfloat-equal")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfloat-equal")
+    endif ()
 
-	check_c_compiler_flag(-Wshadow has_wshadow)
-	if (has_wshadow)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wshadow")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow")
-	endif ()
+    check_c_compiler_flag(-Wshadow has_wshadow)
+    if (has_wshadow)
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wshadow")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wshadow")
+    endif ()
 
-	check_c_compiler_flag(-Wpointer-arith has_wpointer_aritih)
-	if (has_wpointer_aritih)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wpointer-arith")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpointer-arith")
-	endif ()
+    check_c_compiler_flag(-Wpointer-arith has_wpointer_aritih)
+    if (has_wpointer_aritih)
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wpointer-arith")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpointer-arith")
+    endif ()
 
-	check_c_compiler_flag(-Wunreachable-code has_wunreachable_code)
-	if (has_wunreachable_code)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wunreachable-code")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wunreachable-code")
-	endif ()
+    check_c_compiler_flag(-Wunreachable-code has_wunreachable_code)
+    if (has_wunreachable_code)
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wunreachable-code")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wunreachable-code")
+    endif ()
 
-	check_c_compiler_flag(-Winit-self has_winit_self)
-	if (has_winit_self)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Winit-self")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Winit-self")
-	endif ()
+    check_c_compiler_flag(-Winit-self has_winit_self)
+    if (has_winit_self)
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Winit-self")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Winit-self")
+    endif ()
 
-	check_c_compiler_flag(-Wno-unused-function has_wno_unused_function)
-	if (has_wno_unused_function)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-function")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-function")
-	endif ()
+    check_c_compiler_flag(-Wno-unused-function has_wno_unused_function)
+    if (has_wno_unused_function)
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-function")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-function")
+    endif ()
 
-	check_c_compiler_flag(-Wno-unused-parameter has_wno_unused_parameter)
-	if (has_wno_unused_parameter)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-parameter")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-parameter")
-	endif ()
+    check_c_compiler_flag(-Wno-unused-parameter has_wno_unused_parameter)
+    if (has_wno_unused_parameter)
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-parameter")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-parameter")
+    endif ()
 
-	check_c_compiler_flag(-Wno-unreachable-code has_wno_unreachable_code)
-	if (has_wno_unreachable_code)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unreachable-code")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unreachable-code")
-	endif ()
+    check_c_compiler_flag(-Wno-unreachable-code has_wno_unreachable_code)
+    if (has_wno_unreachable_code)
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unreachable-code")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unreachable-code")
+    endif ()
 
-	if (zmdnet_werror)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Werror")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-	endif ()
+    if (zmdnet_werror)
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Werror")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+    endif ()
 
-	if (zmdnet_sanitizer_address)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=address -fno-omit-frame-pointer -g")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
-	endif ()
+    if (zmdnet_sanitizer_address)
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=address -fno-omit-frame-pointer -g")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -g")
+    endif ()
 
-	if (zmdnet_sanitizer_memory)
-		set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
-	endif ()
+    if (zmdnet_sanitizer_memory)
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=memory -fno-omit-frame-pointer -g -fsanitize-memory-track-origins")
+    endif ()
 endif ()
+
 
 # SETTINGS FOR VISUAL STUDIO COMPILER
 if ("x${CMAKE_C_COMPILER_ID}" STREQUAL "xMSVC")
-	if (CMAKE_C_FLAGS MATCHES "/W[0-4]")
-		string(REGEX REPLACE "/W[0-4]" "/W3" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-	else ()
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
-	endif ()
+    if (CMAKE_C_FLAGS MATCHES "/W[0-4]")
+        string(REGEX REPLACE "/W[0-4]" "/W3" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    else ()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3")
+    endif ()
 
-	if (WERROR)
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
-	endif ()
+    if (WERROR)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /WX")
+    endif ()
 endif ()
 
-CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/config.h.in ${CMAKE_REQUIRED_INCLUDES}/config.h)
 
-# build sodium library
-message(STATUS "Git pull remote sodium")
-execute_process(COMMAND git pull WORKING_DIRECTORY ${PROJECT_SOURCE_DIR} OUTPUT_VARIABLE RET)
+# Default to release build if not specified
+if(NOT CMAKE_BUILD_TYPE)
+    message(STATUS "Setting build type to 'Release' as none was specified.")
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif(NOT CMAKE_BUILD_TYPE)
 
-if (WIN32)
-	execute_process(COMMAND  buildall.bat WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/thirdparty/sodium/builds/msvc/build)
-	message(STATUS "run sodium buildall.bat done ")
-	execute_process(COMMAND  xcopy /s /e /i /y  .\\thirdparty\\sodium\\src\\libsodium\\include .\\thirdparty\\libs\\sodiumlib\\include WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-	message(STATUS "copy sodium include headers done")
-	execute_process(COMMAND  xcopy /s /e /i /y  .\\thirdparty\\sodium\\bin\\x64\\release .\\thirdparty\\libs\\sodiumlib\\lib WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-	message(STATUS "copy sodium lib done ")
-else ()
-	execute_process(COMMAND ./autogen.sh WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/thirdparty/sodium)
-	message(STATUS "run sodium autogen.sh done")
-	execute_process(COMMAND ./configure --prefix=${PROJECT_SOURCE_DIR}/thirdparty/libs/sodiumlib --sysconfdir=/etc  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/thirdparty/sodium)
-	message(STATUS "run sodium configure done")
-	execute_process(COMMAND make install WORKING_DIRECTORY ./thirdparty/sodium)
-	message(STATUS "run sodium make install done")
-endif()
 
-# execute_process(COMMAND sudo chmod 777 -R . WORKING_DIRECTORY ./thirdparty/)
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
+    set(CMAKE_EXE_LINKER_FLAGS "-fprofile-arcs -ftest-coverage")
+endif(CMAKE_BUILD_TYPE MATCHES "Debug")
 
-#################################################
-# INCLUDE SUBDIRS
-#################################################
-add_subdirectory(src)
-if (zmdnet_build_programs)
-add_subdirectory(sample)
-endif()
-if (zmdnet_build_tests)
-add_subdirectory(test)
-endif()
+
+add_definitions(-DPREFIX=${CMAKE_INSTALL_PREFIX})
+add_definitions(-DSO_SUFFIX="${CMAKE_SHARED_LIBRARY_SUFFIX}")
+
+
+if(ENABLE_COMPLX OR ENABLE_LC3TEST OR ENABLE_TESTS)
+    set(wxWidgets_USE_LIBS stc xrc xml html adv net core base)
+    find_package(wxWidgets REQUIRED)
+    set(CMAKE_SKIP_RPATH TRUE)
+    include(${wxWidgets_USE_FILE})
+endif(ENABLE_COMPLX OR ENABLE_LC3TEST OR ENABLE_TESTS)
+
+
+if(CMAKE_HOST_WIN32)
+    # Needed for htons
+    set(LIBLC3_EXTRA_LIBS ws2_32)
+    # Windows doesn't set include directories correctly?
+    include_directories("C:/msys/1.0/local/lib/wx/include/msw-unicode-3.0")
+    include_directories("C:/msys/1.0/local/include/wx-3.0")
+endif(CMAKE_HOST_WIN32)
+
+
+include_directories(${zmdsim_SOURCE_DIR}/lc3test)
+include_directories(${zmdsim_SOURCE_DIR}/liblc3)
+include_directories(${zmdsim_SOURCE_DIR}/zlog/src)
+
+
+# set(SRC_LIBLC3
+#     liblc3/ExpressionEvaluator.cpp
+#     liblc3/lc3_assemble.cpp
+#     liblc3/lc3.cpp
+#     liblc3/lc3_debug.cpp
+#     liblc3/lc3_execute.cpp
+#     liblc3/lc3_expressions.cpp
+#     liblc3/lc3_os.cpp
+#     liblc3/lc3_params.cpp
+#     liblc3/lc3_parser.cpp
+#     liblc3/lc3_plugin.cpp
+#     liblc3/lc3_runner.cpp
+#     liblc3/lc3_symbol.cpp
+#     liblc3/lc3_test.cpp
+#     liblc3/lc3_cmp.cpp
+# )
+# add_library(lc3 SHARED ${SRC_LIBLC3})
+# target_link_libraries(lc3 dl ${LIBLC3_EXTRA_LIBS})
+# install(TARGETS lc3 LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+# set(SRC_LOGGING logging/logger.cpp)
+# add_library(logger ${SRC_LOGGING})
+
+# set(SRC_AS2OBJ as2obj/main.c)
+# add_executable(as2obj ${SRC_AS2OBJ})
+# target_link_libraries(as2obj lc3)
+# install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/as2obj DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# set(SRC_LC3RUNNER lc3runner/main.cpp)
+# add_executable(lc3runner ${SRC_LC3RUNNER})
+# target_link_libraries(lc3runner lc3)
+# install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/lc3runner DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+
+add_subdirectory(zlog)
+# if(ENABLE_PLUGINS)
+#     add_subdirectory(plugins)
+# endif(ENABLE_PLUGINS)
+# if(ENABLE_LC3EDIT)
+#     add_subdirectory(lc3edit)
+# endif(ENABLE_LC3EDIT)
+# if(ENABLE_COMP)
+#     add_subdirectory(comp)
+# endif(ENABLE_COMP)
+# if(ENABLE_COMPLX)
+#     add_subdirectory(complx)
+# endif(ENABLE_COMPLX)
+# if(ENABLE_LC3TEST)
+#     add_subdirectory(lc3test)
+# endif(ENABLE_LC3TEST)
+# if(ENABLE_TESTS)
+#     add_subdirectory(tests)
+# endif(ENABLE_TESTS)
+# if (ENABLE_PYLC3)
+#     add_subdirectory(pylc3)
+# endif(ENABLE_PYLC3)
+
+
+# uninstall target
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+    IMMEDIATE @ONLY)
+add_custom_target(uninstall
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
